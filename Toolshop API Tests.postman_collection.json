@@ -1,0 +1,636 @@
+{
+  "info": {
+    "_postman_id": "97e9c2d5-097b-46e0-846c-76888a9703d8",
+    "name": "Toolshop API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49751669",
+    "_collection_link": "https://go.postman.co/collection/49751669-97e9c2d5-097b-46e0-846c-76888a9703d8?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "negative checks",
+      "item": [
+        {
+          "name": "GET product by invalid id — negative",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Несуществующий товар не возвращается\", function () {\r\n    pm.response.to.have.status(404);\r\n});\r\n\r\npm.test(\"Есть сообщение об ошибке\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"message\");\r\n});\r\n\r\npm.test(\"Сообщение: Requested item not found\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.message).to.eql(\"Requested item not found\");\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST add item to cart — quantity 0 — negative",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"API возвращает сообщение о ненайденном item\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.message).to.eql(\"Resource not found\");\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"product_id\": \"{{product_id}}\",\r\n  \"quantity\": 0\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/carts/{{cart_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "carts",
+                "{{cart_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST login user — invalid password — negative",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Логин с неверным паролем отклонён\", function () {\r\n    pm.response.to.have.status(401);\r\n});\r\n\r\npm.test(\"Токен не выдан\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.not.have.property(\"access_token\");\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"ivan.qa.test@example.com\",\r\n  \"password\": \"QaToolshop\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET user by id — invalid JWT — negative",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Невалидный JWT отклонён\", function () {\r\n    pm.response.to.have.status(401);\r\n});\r\n\r\npm.test(\"Данные пользователя не возвращены\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.not.have.property(\"email\");\r\n    pm.expect(body).to.not.have.property(\"first_name\");\r\n    pm.expect(body).to.not.have.property(\"id\");\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{invalid_access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{user_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST register user — duplicate email — negative",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Повторная регистрация отклоняется\", function () {\r\n    pm.response.to.have.status(409);\r\n});\r\n\r\npm.test(\"Есть ошибка по полю email\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"email\");\r\n});\r\n\r\npm.test(\"Сообщение о существующем email\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.email[0]).to.eql(\r\n        \"A customer with this email address already exists.\"\r\n    );\r\n});\r\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"first_name\": \"Ivan\",\r\n  \"last_name\": \"Ivanov\",\r\n  \"password\": \"QaToolshop_2026_Ivan!\",\r\n  \"email\": \"ivan.qa.test@example.com\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST add item to cart — nonexistent product_id — negative",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Товар с несуществующим product_id не добавлен\", function () {\r\n    pm.response.to.have.status(404);\r\n});\r\n\r\npm.test(\"Есть сообщение о ненайденном ресурсе\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.message).to.eql(\"Resource not found\");\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"product_id\": \"1\",\r\n  \"quantity\": 1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/carts/{{cart_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "carts",
+                "{{cart_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET cart by id — no token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Корзина возвращается без токена\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"В ответе есть ID корзины\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"id\");\r\n});\r\n\r\npm.test(\"В ответе есть список товаров корзины\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"cart_items\");\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/carts/{{cart_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "carts",
+                "{{cart_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Linked scenario — cart workflow",
+      "item": [
+        {
+          "name": "POST register user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Пользователь создан\", function () {\r\n    pm.response.to.have.status(201);\r\n});\r\n\r\npm.test(\"В ответе есть id пользователя\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"id\");\r\n});\r\n\r\npm.test(\"Email совпадает с отправленным\", function () {\r\n    const body = pm.response.json();\r\n    const sentEmail = pm.environment.get(\"registered_email\");\r\n\r\n    pm.expect(body.email).to.eql(sentEmail);\r\n});\r\n\r\npm.test(\"Пароль не возвращается в ответе\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.not.have.property(\"password\");\r\n});\r\n"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const email = \"ivan.qa.\" + pm.variables.replaceIn(\"{{$randomUUID}}\") + \"@example.com\";\r\n\r\npm.environment.set(\"registered_email\", email);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"first_name\": \"Ivan\",\r\n  \"last_name\": \"Ivanov\",\r\n  \"password\": \"QaToolshop_2026_Ivan!\",\r\n  \"email\": \"{{registered_email}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST login user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Авторизация успешна\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"В ответе есть access_token\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"access_token\");\r\n});\r\n\r\npm.test(\"access_token не пустой\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.access_token).to.be.a(\"string\");\r\n    pm.expect(body.access_token.length).to.be.above(0);\r\n});\r\n\r\npm.test(\"Тип токена Bearer\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.token_type).to.eql(\"bearer\");\r\n});\r\n\r\npm.test(\"Есть срок жизни токена\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"expires_in\");\r\n});\r\n\r\nconst body = pm.response.json();\r\npm.environment.set(\"access_token\", body.access_token);\r\n\r\nconst tokenParts = body.access_token.split(\".\");\r\nconst payload = JSON.parse(atob(tokenParts[1]));\r\npm.environment.set(\"user_id\", payload.sub);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"{{registered_email}}\",\r\n  \"password\": \"QaToolshop_2026_Ivan!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST create cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Корзина создана\", function () {\r\n    pm.response.to.have.status(201);\r\n});\r\n\r\npm.test(\"В ответе есть id корзины\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"id\");\r\n});\r\n\r\npm.test(\"ID корзины не пустой\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.id).to.be.a(\"string\");\r\n    pm.expect(body.id.length).to.be.above(0);\r\n});\r\n\r\nconst body = pm.response.json();\r\npm.environment.set(\"cart_id\", body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/carts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "carts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус-код 200\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"В ответе есть массив товаров\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.data).to.be.an(\"array\");\r\n});\r\n\r\npm.test(\"Список товаров не пустой\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.data.length).to.be.above(0);\r\n});\r\n\r\npm.test(\"У первого товара есть id и name\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.data[0]).to.have.property(\"id\");\r\n    pm.expect(body.data[0]).to.have.property(\"name\");\r\n});\r\n\r\nconst body = pm.response.json();\r\n\r\npm.test(\"В списке есть товары\", function () {\r\n    pm.expect(body.data).to.be.an(\"array\");\r\n    pm.expect(body.data.length).to.be.above(0);\r\n});\r\n\r\nif (body.data && body.data.length > 0) {\r\n    pm.environment.set(\"product_id\", body.data[0].id);\r\n}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST add item to cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Товар добавлен в корзину\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"API подтверждает добавление\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"result\");\r\n});\r\n\r\npm.test(\"Результат: item added or updated\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.result).to.eql(\"item added or updated\");\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"product_id\": \"{{product_id}}\",\r\n  \"quantity\": 1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/carts/{{cart_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "carts",
+                "{{cart_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET cart by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Корзина получена\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"В ответе есть ID корзины\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"id\");\r\n});\r\n\r\npm.test(\"ID корзины совпадает с cart_id\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.id).to.eql(pm.environment.get(\"cart_id\"));\r\n});\r\n\r\npm.test(\"В корзине есть товары\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.cart_items).to.be.an(\"array\");\r\n    pm.expect(body.cart_items.length).to.be.above(0);\r\n});\r\n\r\npm.test(\"Добавлен нужный товар\", function () {\r\n    const body = pm.response.json();\r\n    const expectedProductId = pm.environment.get(\"product_id\");\r\n    const item = body.cart_items.find(function (item) {\r\n        return item.product_id === expectedProductId;\r\n    });\r\n\r\n    pm.expect(item, \"Товар с product_id не найден в корзине\").to.not.be.undefined;\r\n});\r\n\r\npm.test(\"Количество товара равно 1\", function () {\r\n    const body = pm.response.json();\r\n    const expectedProductId = pm.environment.get(\"product_id\");\r\n    const item = body.cart_items.find(function (item) {\r\n        return item.product_id === expectedProductId;\r\n    });\r\n\r\n    pm.expect(item.quantity).to.eql(1);\r\n});\r\n\r\npm.test(\"У товара есть название\", function () {\r\n    const body = pm.response.json();\r\n    const item = body.cart_items[0];\r\n\r\n    pm.expect(item.product).to.have.property(\"name\");\r\n    pm.expect(item.product.name).to.be.a(\"string\");\r\n    pm.expect(item.product.name.length).to.be.above(0);\r\n});\r\n\r\npm.test(\"У товара есть цена\", function () {\r\n    const body = pm.response.json();\r\n    const item = body.cart_items[0];\r\n\r\n    pm.expect(item.product).to.have.property(\"price\");\r\n    pm.expect(item.product.price).to.be.a(\"number\");\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/carts/{{cart_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "carts",
+                "{{cart_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE remove product from cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Товар удалён из корзины\", function () {\r\n    pm.response.to.have.status(204);\r\n});\r\n\r\npm.test(\"У успешного удаления нет тела ответа\", function () {\r\n    pm.expect(pm.response.text()).to.eql(\"\");\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/carts/{{cart_id}}/product/{{product_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "carts",
+                "{{cart_id}}",
+                "product",
+                "{{product_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET cart by id — after delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Корзина получена после удаления\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"Корзина пустая после удаления товара\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.cart_items).to.be.an(\"array\");\r\n    pm.expect(body.cart_items.length).to.eql(0);\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/carts/{{cart_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "carts",
+                "{{cart_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "GET product by id",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус-код 200\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"У товара есть id\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"id\");\r\n});\r\n\r\npm.test(\"У товара есть название\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body).to.have.property(\"name\");\r\n});\r\n\r\npm.test(\"ID совпадает с переменной product_id\", function () {\r\n    const body = pm.response.json();\r\n    pm.expect(body.id).to.eql(pm.environment.get(\"product_id\"));\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/products/{{product_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "products",
+            "{{product_id}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
