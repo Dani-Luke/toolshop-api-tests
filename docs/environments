@@ -1,0 +1,52 @@
+{
+  "id": "bb72e487-ffbd-4d17-9e4b-3e269c5cb284",
+  "name": "Toolshop Dev",
+  "values": [
+    {
+      "key": "base_url",
+      "value": "https://api.toolshop.io",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "invalid_access_token",
+      "value": "invalid_token_for_negative_test",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "cart_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "registered_email",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "color": null,
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-10-13T13:28:19.092Z",
+  "_postman_exported_using": "Postman/12.32.1"
+}
