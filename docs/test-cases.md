@@ -18,11 +18,13 @@
   "email": "{{registered_email}}"
 }
 ```
+Before request 
 ```before request 
 const email = "ivan.qa." + pm.variables.replaceIn("{{$randomUUID}}") + "@example.com";
 
 pm.environment.set("registered_email", email);
 ```
+After request 
 ```after request 
 pm.test("Пользователь создан", function () {
     pm.response.to.have.status(201);
