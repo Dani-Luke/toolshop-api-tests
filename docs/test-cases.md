@@ -5,30 +5,84 @@
 **Preconditions (Предусловия):**
 
 * Postman открыт.
-* Выбран environment `Toolshop Dev`.
 * API доступен.
+* Окружение - Toolshop Dev
 
 **Test Data (Тестовые данные):**
 
-* First Name: `Ivan`
-* Last Name: `Ivanov`
-* Password: `QaToolshop_2026_Ivan!`
-* Email: уникальный email, формируемый через `{{$randomUUID}}`
+```json
+{
+  "first_name": "Ivan",
+  "last_name": "Ivanov",
+  "password": "QaToolshop_2026_Ivan!",
+  "email": "{{registered_email}}"
+}
+```
+```before request 
+const email = "ivan.qa." + pm.variables.replaceIn("{{$randomUUID}}") + "@example.com";
+
+pm.environment.set("registered_email", email);
+```
+```after request 
+pm.test("Пользователь создан", function () {
+    pm.response.to.have.status(201);
+});
+
+pm.test("В ответе есть id пользователя", function () {
+    const body = pm.response.json();
+    pm.expect(body).to.have.property("id");
+});
+
+pm.test("Email совпадает с отправленным", function () {
+    const body = pm.response.json();
+    const sentEmail = pm.environment.get("registered_email");
+
+    pm.expect(body.email).to.eql(sentEmail);
+});
+
+pm.test("Пароль не возвращается в ответе", function () {
+    const body = pm.response.json();
+    pm.expect(body).to.not.have.property("password");
+});
+```
 
 **Steps (Шаги):**
 
-1. Открыть запрос `POST register user`.
-2. Убедиться, что выбран environment `Toolshop Dev`.
-3. В Pre-request Script убедиться, что уникальный email сохраняется в переменную `registered_email`.
-4. В Body убедиться, что передаются `first_name`, `last_name`, `password` и `{{registered_email}}`.
-5. Отправить запрос.
-6. Проверить статус-код ответа.
-7. Проверить, что email в ответе совпадает со значением `registered_email`.
-8. Проверить наличие идентификатора созданного пользователя.
+1. В теле запроса передать данные из Test Data.
+2. Во вкладке Sripts в before request и after request, вставить скрипты из Test Data.
+3. Отправить запрос:
+
+```http
+POST {{base_url}}/users/register
+Content-Type: application/json
+```
+4. Проверить статус-код ответа.
+5. Проверить наличие идентификатора созданного пользователя.
+6. Проверить остальные поля ответа.
 
 **Expected Result (Ожидаемый результат):**
-Пользователь успешно зарегистрирован. API возвращает `201 Created`, данные созданного пользователя и его email. Email в ответе совпадает с отправленным.
 
+Статус-код: `201 Created`.
+
+```json
+{
+    "first_name": "Ivan",
+    "last_name": "Ivanov",
+    "email": "ivan.qa.c0765582-aaa2-4b94-943a-306e3e9911cd@example.com",
+    "id": "01m4tfy51wn5dkc1ap695mxbs1",
+    "created_at": "2026-10-13 11:21:34",
+    "address": {
+        "street": null,
+        "house_number": null,
+        "city": null,
+        "state": null,
+        "country": null,
+        "postal_code": null
+    }
+}
+```
+**Примечание:**
+email генерируется случайным образом посредством {{$randomUUID}} в before request скрипта, поэтому в теле ответа, email будет генерироваться с каждым разом новый.
 ---
 
 ## TC-02 — Successful User Login (Успешная авторизация пользователя)
@@ -36,25 +90,39 @@
 **Preconditions (Предусловия):**
 
 * Пользователь зарегистрирован.
-* Выбран environment `Toolshop Dev`.
+* Известны email и пароль пользователя.
 
 **Test Data (Тестовые данные):**
 
-* Email: email зарегистрированного пользователя.
-* Password: валидный пароль пользователя.
+```json
+{
+  "email": "ivan.qa.3f8b1c2e-9d47-4f6a-8f21-6b9d2a7c1234@example.com",
+  "password": "QaToolshop_2026_Ivan!"
+}
+```
 
 **Steps (Шаги):**
 
-1. Открыть запрос `POST login user`.
-2. Убедиться, что выбран environment `Toolshop Dev`.
-3. В Body указать валидные `email` и `password`.
-4. Отправить запрос.
-5. Проверить статус-код ответа.
-6. Проверить наличие `access_token` в ответе.
-7. Проверить сохранение `access_token` и `user_id` в environment.
+1. Отправить запрос:
+
+```http
+POST {{base_url}}/users/login
+Content-Type: application/json
+```
+
+2. В теле запроса передать данные из Test Data.
+3. Проверить статус-код ответа.
+4. Проверить наличие `access_token` в ответе.
 
 **Expected Result (Ожидаемый результат):**
-Пользователь успешно авторизован. API возвращает `200 OK` и `access_token`. Токен и `user_id` сохраняются в environment для последующих запросов.
+
+Статус-код: `200 OK`.
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
 
 ---
 
@@ -63,24 +131,37 @@
 **Preconditions (Предусловия):**
 
 * Пользователь зарегистрирован и авторизован.
-* `access_token` сохранён в environment.
-* Выбран environment `Toolshop Dev`.
+* Получен валидный `access_token`.
 
 **Test Data (Тестовые данные):**
 
-* Authorization: `Bearer {{access_token}}`
+```http
+Authorization: Bearer {{access_token}}
+```
 
 **Steps (Шаги):**
 
-1. Открыть запрос `POST create cart`.
-2. Убедиться, что в Authorization используется Bearer Token `{{access_token}}`.
-3. Отправить запрос.
-4. Проверить статус-код ответа.
-5. Проверить наличие идентификатора корзины в ответе.
-6. Проверить сохранение `cart_id` в environment.
+1. Отправить запрос:
+
+```http
+POST {{base_url}}/carts
+Authorization: Bearer {{access_token}}
+```
+
+2. Проверить статус-код ответа.
+3. Проверить наличие идентификатора корзины в ответе.
 
 **Expected Result (Ожидаемый результат):**
-Корзина успешно создана. API возвращает `201 Created` и идентификатор корзины. `cart_id` сохраняется в environment для последующих запросов.
+
+Статус-код: `201 Created`.
+
+```json
+{
+  "id": "cart_67890",
+  "user_id": "user_12345",
+  "cart_items": []
+}
+```
 
 ---
 
@@ -89,24 +170,40 @@
 **Preconditions (Предусловия):**
 
 * API доступен.
-* Выбран environment `Toolshop Dev`.
 
 **Test Data (Тестовые данные):**
 
-* Отсутствуют.
+```http
+Отсутствуют
+```
 
 **Steps (Шаги):**
 
-1. Открыть запрос `GET products`.
-2. Убедиться, что выбран environment `Toolshop Dev`.
-3. Отправить запрос.
-4. Проверить статус-код ответа.
-5. Проверить наличие массива товаров в ответе.
-6. Проверить наличие идентификатора `id` у товаров.
-7. Проверить сохранение `product_id` первого товара в environment.
+1. Отправить запрос:
+
+```http
+GET {{base_url}}/products
+```
+
+2. Проверить статус-код ответа.
+3. Проверить наличие массива товаров в ответе.
+4. Проверить наличие `id` у товаров.
 
 **Expected Result (Ожидаемый результат):**
-Список товаров успешно получен. API возвращает `200 OK` и массив товаров. `product_id` первого товара сохраняется в environment для добавления товара в корзину.
+
+Статус-код: `200 OK`.
+
+```json
+{
+  "data": [
+    {
+      "id": "product_001",
+      "name": "Toolshop Screwdriver",
+      "price": 19.99
+    }
+  ]
+}
+```
 
 ---
 
@@ -114,32 +211,53 @@
 
 **Preconditions (Предусловия):**
 
-* Пользователь авторизован.
-* Корзина создана.
-* `product_id` получен из списка товаров.
-* Выбран environment `Toolshop Dev`.
+* Пользователь зарегистрирован и авторизован.
+* Получен валидный `access_token`.
+* Создана корзина и известен её `cart_id`.
+* Получен валидный `product_id`.
 
 **Test Data (Тестовые данные):**
 
-* Cart ID: `{{cart_id}}`
-* Product ID: `{{product_id}}`
-* Quantity: `1`
-* Authorization: `Bearer {{access_token}}`
+```json
+{
+  "product_id": "product_001",
+  "quantity": 1
+}
+```
 
 **Steps (Шаги):**
 
-1. Открыть запрос `POST add item to cart`.
-2. Убедиться, что в URL используется `{{cart_id}}`.
-3. Убедиться, что в Authorization используется Bearer Token `{{access_token}}`.
-4. В Body указать `{{product_id}}` и `quantity: 1`.
-5. Отправить запрос.
-6. Проверить статус-код ответа.
-7. Открыть запрос `GET cart by id` и отправить его.
-8. Проверить наличие добавленного товара в `cart_items`.
-9. Проверить, что количество товара равно `1`.
+1. Отправить запрос:
+
+```http
+POST {{base_url}}/carts/{{cart_id}}/items
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+```
+
+2. В теле запроса передать данные из Test Data.
+3. Проверить статус-код ответа.
+4. Отправить запрос:
+
+```http
+GET {{base_url}}/carts/{{cart_id}}
+Authorization: Bearer {{access_token}}
+```
+
+5. Проверить, что добавленный товар отображается в `cart_items`.
+6. Проверить, что количество товара равно `1`.
 
 **Expected Result (Ожидаемый результат):**
-Товар успешно добавлен в корзину. В ответе запроса корзины товар с переданным `product_id` отображается в `cart_items`, а его количество равно `1`.
+
+Статус-код: `200 OK`.
+
+```json
+{
+  "cart_id": "cart_67890",
+  "product_id": "product_001",
+  "quantity": 1
+}
+```
 
 ---
 
@@ -147,31 +265,48 @@
 
 **Preconditions (Предусловия):**
 
-* Пользователь авторизован.
-* Корзина создана.
-* Товар добавлен в корзину.
-* Выбран environment `Toolshop Dev`.
+* Пользователь зарегистрирован и авторизован.
+* Получен валидный `access_token`.
+* Создана корзина и известен её `cart_id`.
+* В корзину добавлен товар с известным `product_id`.
 
 **Test Data (Тестовые данные):**
 
-* Cart ID: `{{cart_id}}`
-* Product ID: `{{product_id}}`
-* Authorization: `Bearer {{access_token}}`
+```http
+Authorization: Bearer {{access_token}}
+```
 
 **Steps (Шаги):**
 
-1. Открыть запрос `GET cart by id`.
-2. Убедиться, что в URL используется `{{cart_id}}`.
-3. Убедиться, что в Authorization используется Bearer Token `{{access_token}}`.
-4. Отправить запрос.
-5. Проверить статус-код ответа.
-6. Проверить наличие идентификатора корзины в ответе.
-7. Проверить наличие массива `cart_items`.
-8. Проверить наличие добавленного товара в `cart_items`.
-9. Проверить, что количество товара равно `1`.
+1. Отправить запрос:
+
+```http
+GET {{base_url}}/carts/{{cart_id}}
+Authorization: Bearer {{access_token}}
+```
+
+2. Проверить статус-код ответа.
+3. Проверить наличие идентификатора корзины в ответе.
+4. Проверить наличие массива `cart_items`.
+5. Проверить, что добавленный товар отображается в `cart_items`.
+6. Проверить, что количество товара равно `1`.
 
 **Expected Result (Ожидаемый результат):**
-Корзина успешно получена. API возвращает `200 OK`, данные корзины и массив `cart_items`. Добавленный товар отображается в корзине с количеством `1`.
+
+Статус-код: `200 OK`.
+
+```json
+{
+  "id": "cart_67890",
+  "user_id": "user_12345",
+  "cart_items": [
+    {
+      "product_id": "product_001",
+      "quantity": 1
+    }
+  ]
+}
+```
 
 ---
 
@@ -179,31 +314,50 @@
 
 **Preconditions (Предусловия):**
 
-* Пользователь авторизован.
-* Корзина создана.
-* Товар добавлен в корзину.
-* Выбран environment `Toolshop Dev`.
+* Пользователь зарегистрирован и авторизован.
+* Получен валидный `access_token`.
+* Создана корзина и известен её `cart_id`.
+* В корзину добавлен товар с известным `product_id`.
 
 **Test Data (Тестовые данные):**
 
-* Cart ID: `{{cart_id}}`
-* Product ID: `{{product_id}}`
-* Authorization: `Bearer {{access_token}}`
+```http
+Authorization: Bearer {{access_token}}
+```
 
 **Steps (Шаги):**
 
-1. Открыть запрос `DELETE remove product from cart`.
-2. Убедиться, что в URL используются `{{cart_id}}` и `{{product_id}}`.
-3. Убедиться, что в Authorization используется Bearer Token `{{access_token}}`.
-4. Отправить запрос.
-5. Проверить статус-код ответа.
-6. Открыть запрос `GET cart by id — after delete`.
-7. Убедиться, что в URL используется `{{cart_id}}`.
-8. Убедиться, что в Authorization используется Bearer Token `{{access_token}}`.
-9. Отправить запрос.
-10. Проверить статус-код повторного запроса корзины.
-11. Проверить отсутствие удалённого товара в `cart_items`.
-12. Проверить, что массив `cart_items` пустой.
+1. Отправить запрос:
+
+```http
+DELETE {{base_url}}/carts/{{cart_id}}/items/{{product_id}}
+Authorization: Bearer {{access_token}}
+```
+
+2. Проверить статус-код ответа.
+3. Отправить запрос:
+
+```http
+GET {{base_url}}/carts/{{cart_id}}
+Authorization: Bearer {{access_token}}
+```
+
+4. Проверить статус-код повторного запроса корзины.
+5. Проверить, что удалённый товар отсутствует в `cart_items`.
+6. Проверить, что массив `cart_items` пустой.
 
 **Expected Result (Ожидаемый результат):**
-Товар успешно удалён из корзины. Запрос удаления возвращает `204 No Content`. Повторный запрос корзины возвращает `200 OK`, массив `cart_items` пустой.
+
+Статус-код запроса удаления: `204 No Content`.
+
+Тело ответа отсутствует.
+
+Статус-код повторного запроса корзины: `200 OK`.
+
+```json
+{
+  "id": "cart_67890",
+  "user_id": "user_12345",
+  "cart_items": []
+}
+```
