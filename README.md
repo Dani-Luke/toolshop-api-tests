@@ -39,3 +39,20 @@
 Ожидаемый результат — `401 Unauthorized`.
 
 Подробнее: `docs/bug-report.md`
+
+## Environment
+
+Файл `environments` содержит environment для запуска коллекции.
+
+Статические переменные:
+
+* `base_url` — базовый адрес API
+* `invalid_access_token` — невалидный токен для негативного теста
+
+Динамические переменные заполняются автоматически во время выполнения сценария:
+
+* `registered_email`
+* `access_token`
+* `user_id`
+* `cart_id`
+* `product_id`
